@@ -9,8 +9,7 @@ export const apiSlice = createSlice({
   initialState,
   reducers: {
     setResponses: (state, { payload }) => {
-      console.log("payload ", payload);
-      state.responses = [payload];
+      state.responses = payload;
     },
   },
 });

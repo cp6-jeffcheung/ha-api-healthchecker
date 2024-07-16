@@ -3,38 +3,30 @@ import Button from "@mui/material/Button";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import API from "assets/json/API.json";
-import host from "assets/json/host.json";
 import Grid from "@mui/material/Grid";
 import "./index.scss";
 import { useDispatch } from "react-redux";
 import { callAPI } from "store/actions/apiAction";
 import { useSelector } from "react-redux";
+import APIPath from "components/APIPath";
+import forEach from "lodash/forEach";
+import map from "lodash/map";
 
 const HomePage = () => {
   const dispatch = useDispatch();
   const [apiEnv, setApiEnv] = useState([]);
-
-  const responses = useSelector((state) => state.api.responses);
-  console.log("responses", responses);
 
   const handleApiEnvChange = (event, value) => {
     setApiEnv(value);
   };
 
   const onStartClick = (event) => {
-    console.log("Start Calling " + host.hostPreEnv + "sit" + host.hostPostEnv);
-
-    //
-
-    dispatch(
-      callAPI(
-        host.hostPreEnv +
-          "sit" +
-          host.hostPostEnv +
-          "app-config/view-mode?hospCode=VH&workstationId=VH_HAHO&userId=@CMSIT&wrkStnType=0"
-      )
-    );
+    forEach(API.apis, (api, idx) => {
+      dispatch(callAPI(api.path, api.params));
+    });
   };
+
+  console.log("API", API);
 
   return (
     <Grid container className="Grid-HomePage-wrapper">
@@ -60,8 +52,10 @@ const HomePage = () => {
       </Grid>
 
       <Grid container item xs={12}>
+        {map(API.apis, (api, idx) => {
+          return <APIPath path={api.path} params={api.params} />;
+        })}
         {/* show the list of api path with responses and status */}
-        {JSON.stringify(responses)}
       </Grid>
     </Grid>
   );
