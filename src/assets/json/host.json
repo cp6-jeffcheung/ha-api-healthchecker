@@ -1,0 +1,4 @@
+{
+  "hostPreEnv": "https://cms-cvdb-formatengine-cms-corp-",
+  "hostPostEnv": ".cmseap.server.ha.org.hk/"
+}

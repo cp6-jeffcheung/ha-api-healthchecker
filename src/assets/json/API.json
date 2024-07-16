@@ -1,0 +1,23 @@
+{
+  "apis": [
+    {
+      "path": "app-config/view-mode",
+      "params": {
+        "hospCode": "VH",
+        "workstationId": "VH_HAHO",
+        "userId": "@CMSIT"
+      }
+    },
+    {
+      "path": "app-config/maintenance-mode",
+      "params": {
+        "hospCode": "VH",
+        "workstationId": "VH_HAHO",
+        "userId": "@CMSIT",
+        "wrkStnType": "0",
+        "wardCode": "5K",
+        "wardLocation": "5K"
+      }
+    }
+  ]
+}
