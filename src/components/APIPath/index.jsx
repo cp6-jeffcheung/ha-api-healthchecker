@@ -33,8 +33,11 @@ const APIPath = ({ path, params, status }) => {
   const responses = useSelector((state) => state.api.responses);
   const response = get(responses, path, "");
 
+  
+
   return (
-    <Accordion>
+    <Accordion slotProps={{ transition: { timeout: 200 } }}>
+      
       <AccordionSummary
         //expandIcon={<ExpandMoreIcon />}
           
