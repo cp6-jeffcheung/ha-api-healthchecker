@@ -19,7 +19,6 @@ import {
 const HomePage = () => {
   const dispatch = useDispatch();
   const [apiEnv, setApiEnv] = useState([]);
-  const [expandedModes, setExpandedModes] = useState(['view-mode', 'maintenance-mode']);
 
   const handleApiEnvChange = (event, value) => {
     setApiEnv(value);
