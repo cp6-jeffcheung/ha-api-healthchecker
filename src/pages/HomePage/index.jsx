@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { callAPI } from "store/actions/apiAction";
 import APIPath from "components/APIPath";
 import forEach from "lodash/forEach";
-import groupBy from "lodash/groupBy";
+import sortBy from "lodash/sortBy";
 import { 
   Container, 
   Box, 
@@ -13,11 +13,8 @@ import {
   Grid, 
   ToggleButtonGroup, 
   ToggleButton, 
-  Button, 
-  Accordion,  
-  AccordionDetails,
+  Button
 } from "@mui/material";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const HomePage = () => {
   const dispatch = useDispatch();
@@ -34,16 +31,7 @@ const HomePage = () => {
     });
   };
 
-  const groupedApis = groupBy(API.apis, (api) => {
-    return api.path.includes('view-mode') ? 'view-mode' : 'maintenance-mode';
-  });
-
-  const handleModeExpand = (mode) => (event, isExpanded) => {
-    setExpandedModes(isExpanded 
-      ? [...expandedModes, mode]
-      : expandedModes.filter(m => m !== mode)
-    );
-  };
+  const sortedApis = sortBy(API.apis, ['path']);
 
   return (
     <Container maxWidth="lg">
@@ -70,22 +58,14 @@ const HomePage = () => {
             </Button>
           </Grid>
           <Grid item xs={12}>
-            {Object.entries(groupedApis).map(([mode, apis]) => (
-              <Accordion 
-                key={mode}
-                expanded={expandedModes.includes(mode)}
-                onChange={handleModeExpand(mode)}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="h6">{mode}</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {apis.map((api, idx) => (
-                    <APIPath key={idx} path={api.path} params={api.params} />
-                  ))}
-                </AccordionDetails>
-              </Accordion>
-            ))}
+          {sortedApis.map((api, idx) => (
+            <APIPath 
+              key={idx} 
+              path={api.path} 
+              params={api.params} 
+              status={api.status || 'not-tested'}
+            />
+          ))}
           </Grid>
         </Grid>
       </Box>
