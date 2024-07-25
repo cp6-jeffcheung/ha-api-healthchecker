@@ -1,3 +1,4 @@
+// apiAction.js
 import axios from "axios";
 import { setApiResponse, setApiStatus } from "store/slices/apiSlices";
 import host from "assets/json/host.json";
@@ -15,8 +16,16 @@ export const callAPI = (apiPath, params, environment) => async (dispatch) => {
     
     if (resp.status >= 400) throw new Error(`${resp.status} ${resp.statusText}`);
 
-    dispatch(setApiResponse({ path: apiPath, response: resp.data, environment }));
-    dispatch(setApiStatus({ path: apiPath, status: 'Success', environment }));
+    const responseData = resp.data;
+    dispatch(setApiResponse({ path: apiPath, response: responseData, environment }));
+
+    // Check if the response contains the word 'Error'
+    const responseString = JSON.stringify(responseData).toLowerCase();
+    if (responseString.includes('error:')) {
+      dispatch(setApiStatus({ path: apiPath, status: 'Fail', environment }));
+    } else {
+      dispatch(setApiStatus({ path: apiPath, status: 'Success', environment }));
+    }
   } catch (err) {
     console.log("Error: ", err);
     const errorCode = err.response?.status || '';
