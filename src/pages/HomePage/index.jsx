@@ -20,9 +20,7 @@ const HomePage = () => {
   const { selectedEnvironments, params } = useSelector(state => state.api);
 
   const handleEnvironmentChange = (_, newEnvironments) => {
-    if (newEnvironments.length > 0) {
-      dispatch(setSelectedEnvironments(newEnvironments));
-    }
+    dispatch(setSelectedEnvironments(newEnvironments));
   };
 
   const onStartClick = () => {
@@ -52,7 +50,13 @@ const HomePage = () => {
             </ToggleButtonGroup>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Button variant="contained" onClick={onStartClick}>Start API Calls</Button>
+            <Button 
+              variant="contained" 
+              onClick={onStartClick}
+              disabled={selectedEnvironments.length === 0}
+            >
+              Start API Calls
+            </Button>
           </Grid>
           <Grid item xs={12}>
             {sortBy(API.apis, ['path']).map((api, idx) => (
