@@ -11,7 +11,7 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
     const [apiPath, setApiPath] = useState('');
     const [selectedOption, setSelectedOption] = useState('get');
     const [selectedEnvironment, setSelectedEnvironment] = useState('SIT');
-    const [apiPaths, setApiPaths] = useState([{ apiPath: '', selectedOption: 'get', selectedEnvironment: 'SIT', paramValue: [] }]);
+    const [apiPaths, setApiPaths] = useState([{ path: '', selectedOption: 'get', selectedEnvironment: 'SIT', params: [] }]);
   
     const handleAddApiPath = () => {
       setApiPaths([...apiPaths, { apiPath: '', selectedOption: 'get', selectedEnvironment: 'SIT', paramValue: [] }]);
@@ -24,26 +24,26 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
     };
 
 
-  const handleApiJsonSave = () => {
-    try {
-      const parsedConfig = JSON.parse(apiJson);
-      setApiConfig(parsedConfig);
-      setSnackbar({
-        open: true,
-        message: "API configuration updated successfully",
-        severity: "success",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Invalid JSON format. Please check your input.",
-        severity: "error",
-      });
-    }
+    const handleApiJsonSave = () => {
+      try {
+          const parsedConfig = apiPaths; // Save the API input form data as the configuration
+          setApiConfig(parsedConfig);
+          setSnackbar({
+              open: true,
+              message: "API configuration updated successfully",
+              severity: "success",
+          });
+      } catch (error) {
+          setSnackbar({
+              open: true,
+              message: "Invalid API configuration format. Please check your input.",
+              severity: "error",
+          });
+      }
   };
 
   const handleExportJson = () => {
-    const formData = apiPaths.map(item => ({ apiPath: item.apiPath, selectedOption: item.selectedOption, selectedEnvironment: item.selectedEnvironment, paramValue: item.paramValue }));
+    const formData = apiPaths.map(item => ({ apiPath: item.path, selectedOption: item.selectedOption, selectedEnvironment: item.selectedEnvironment, params: item.paramValue }));
     const jsonData = JSON.stringify(formData, null, 2);
 
     const blob = new Blob([jsonData], { type: "application/json" });
@@ -159,7 +159,7 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
             API Path:
             <input
               type="text"
-              value={item.apiPath}
+              value={item.path}
               onChange={(e) => {
                 const updatedApiPaths = [...apiPaths];
                 updatedApiPaths[index].apiPath = e.target.value;
@@ -233,7 +233,7 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
 
           <label>
             Param Value:
-            {item.paramValue.map((param, paramIndex) => (
+            {item.params.map((param, paramIndex) => (
               <div key={paramIndex}>
                 <input
                   type="text"
