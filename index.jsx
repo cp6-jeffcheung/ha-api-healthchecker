@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Container, Box, Typography, Paper, TextField, Button, Grid } from "@mui/material";
+import { Container, Box, Typography, Paper, TextField, Button, Grid, Checkbox, FormControlLabel } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
 import UploadIcon from "@mui/icons-material/Upload";
@@ -7,43 +7,87 @@ import JSONViewer from './JSONViewer';
 import data from 'assets/json/API.json';
 
 const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
-    const fileInputRef = useRef(null);
-    const [apiPath, setApiPath] = useState('');
-    const [selectedOption, setSelectedOption] = useState('get');
-    const [selectedEnvironment, setSelectedEnvironment] = useState('SIT');
-    const [apiPaths, setApiPaths] = useState([{ path: '', selectedOption: 'get', selectedEnvironment: 'SIT', params: [] }]);
-  
-    const handleAddApiPath = () => {
-      setApiPaths([...apiPaths, { apiPath: '', selectedOption: 'get', selectedEnvironment: 'SIT', paramValue: [] }]);
-    };
-  
-    const handleAddApiParams = (index) => {
-      const updatedApiPaths = [...apiPaths];
-      updatedApiPaths[index].paramValue = [...updatedApiPaths[index].paramValue, ''];
-      setApiPaths(updatedApiPaths);
-    };
+  const fileInputRef = useRef(null);
+  const [apiPaths, setApiPaths] = useState([
+    {
+      method: "post",
+      path: "",
+      params: [{ key: "", value: "", environments: [] }]
+    }
+  ]);
 
+  const handleKeyValuePairChange = (apiIndex, paramIndex, field, value) => {
+    const updatedApiPaths = [...apiPaths];
+    updatedApiPaths[apiIndex].params[paramIndex][field] = value;
+    setApiPaths(updatedApiPaths);
+  };
 
-    const handleApiJsonSave = () => {
-      try {
-          const parsedConfig = apiPaths; // Save the API input form data as the configuration
-          setApiConfig(parsedConfig);
-          setSnackbar({
-              open: true,
-              message: "API configuration updated successfully",
-              severity: "success",
-          });
-      } catch (error) {
-          setSnackbar({
-              open: true,
-              message: "Invalid API configuration format. Please check your input.",
-              severity: "error",
-          });
-      }
+  const handleAddKeyValuePair = (apiIndex) => {
+    const updatedApiPaths = [...apiPaths];
+    updatedApiPaths[apiIndex].params.push({ key: "", value: "", environments: [] });
+    setApiPaths(updatedApiPaths);
+  };
+
+  const handleAddApiPath = () => {
+    setApiPaths([...apiPaths, {
+      method: "post",
+      path: "",
+      params: [{ key: "", value: "", environments: [] }]
+    }]);
+  };
+
+  const handleEnvironmentToggle = (apiIndex, paramIndex, env) => {
+    const updatedApiPaths = [...apiPaths];
+    const environments = updatedApiPaths[apiIndex].params[paramIndex].environments;
+    const index = environments.indexOf(env);
+    if (index > -1) {
+      environments.splice(index, 1);
+    } else {
+      environments.push(env);
+    }
+    setApiPaths(updatedApiPaths);
+  };
+
+  const handleApiJsonSave = () => {
+    try {
+      const parsedConfig = { apis: formatApiPathsForExport(apiPaths) };
+      setApiConfig(parsedConfig);
+      setSnackbar({
+        open: true,
+        message: "API configuration updated successfully",
+        severity: "success",
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Invalid API configuration format. Please check your input.",
+        severity: "error",
+      });
+    }
+  };
+
+  const formatApiPathsForExport = (apiPaths) => {
+    return apiPaths.map(api => {
+      const formattedApi = {
+        method: api.method,
+        path: api.path,
+        sit: { params: {} },
+        devqa: { params: {} },
+        aat: { params: {} }
+      };
+
+      api.params.forEach(param => {
+        param.environments.forEach(env => {
+          formattedApi[env.toLowerCase()].params[param.key] = param.value;
+        });
+      });
+
+      return formattedApi;
+    });
   };
 
   const handleExportJson = () => {
-    const formData = apiPaths.map(item => ({ apiPath: item.path, selectedOption: item.selectedOption, selectedEnvironment: item.selectedEnvironment, params: item.paramValue }));
+    const formData = { apis: formatApiPathsForExport(apiPaths) };
     const jsonData = JSON.stringify(formData, null, 2);
 
     const blob = new Blob([jsonData], { type: "application/json" });
@@ -54,11 +98,11 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
     link.click();
     URL.revokeObjectURL(url);
     setSnackbar({
-        open: true,
-        message: "Form data exported successfully",
-        severity: "success",
+      open: true,
+      message: "Form data exported successfully",
+      severity: "success",
     });
-};
+  };
 
   const handleImportJson = (event) => {
     const file = event.target.files[0];
@@ -69,12 +113,28 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
           const content = e.target.result;
           setApiJson(content);
           const parsedConfig = JSON.parse(content);
-          setApiConfig(parsedConfig);
-          setSnackbar({
-            open: true,
-            message: "API configuration imported successfully",
-            severity: "success",
-          });
+          if (parsedConfig.apis) {
+            const formattedApiPaths = parsedConfig.apis.map(api => ({
+              method: api.method,
+              path: api.path,
+              params: Object.keys(api.sit.params).map(key => ({
+                key,
+                value: api.sit.params[key],
+                environments: ['SIT', 'DEVQA', 'AAT'].filter(env => 
+                  api[env.toLowerCase()].params[key] === api.sit.params[key]
+                )
+              }))
+            }));
+            setApiPaths(formattedApiPaths);
+            setApiConfig(parsedConfig);
+            setSnackbar({
+              open: true,
+              message: "API configuration imported successfully",
+              severity: "success",
+            });
+          } else {
+            throw new Error("Invalid JSON structure");
+          }
         } catch (error) {
           setSnackbar({
             open: true,
@@ -90,172 +150,148 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
+    return (
+        <Container maxWidth="lg">
+            <Box sx={{ my: 4 }}>
+                <Typography variant="h4" component="h1" gutterBottom align="center">
+                    Edit API Configuration
+                </Typography>
+                <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+                    <div></div>
+                    <Grid container spacing={2} justifyContent="center">
+                        <Grid item>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleApiJsonSave}
+                                startIcon={<SaveIcon />}
+                            >
+                                Save Changes
+                            </Button>
+                        </Grid>
+                        <Grid item>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={handleExportJson}
+                                startIcon={<DownloadIcon />}
+                            >
+                                Export JSON
+                            </Button>
+                        </Grid>
+                        <Grid item>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={triggerFileInput}
+                                startIcon={<UploadIcon />}
+                            >
+                                Import JSON
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                style={{ display: "none" }}
+                                onChange={handleImportJson}
+                                accept=".json"
+                            />
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Box>
+            <h1>JSON Viewer</h1>
+            <JSONViewer jsonData={data} />
 
-  
-
-  return (
-    <Container maxWidth="lg">
-
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          Edit API Configuration
-        </Typography>
-        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-          <div>
-
-          </div>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleApiJsonSave}
-                startIcon={<SaveIcon />}
-              >
-                Save Changes
-              </Button>
-            </Grid>
-            <Grid item>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleExportJson}
-                startIcon={<DownloadIcon />}
-              >
-                Export JSON
-              </Button>
-            </Grid>
-            <Grid item>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={triggerFileInput}
-                startIcon={<UploadIcon />}
-              >
-                Import JSON
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                onChange={handleImportJson}
-                accept=".json"
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Box>
-      <h1>JSON Viewer</h1>
-      <JSONViewer jsonData={data} />
-
-      <div>
-      <h2>API Input Form</h2>
-
+            <div>
+        <h2>API Input Form</h2>
         <button onClick={handleAddApiPath}>Add Api Path +</button>
         <div>
-      {apiPaths.map((item, index) => (
-        <div key={index}>
-          <label>
-            API Path:
-            <input
-              type="text"
-              value={item.path}
-              onChange={(e) => {
-                const updatedApiPaths = [...apiPaths];
-                updatedApiPaths[index].apiPath = e.target.value;
-                setApiPaths(updatedApiPaths);
-              }}
-            />
-          </label>
-          <br />
-
-          <label>
-            Select an Option:
-            <select
-              value={item.selectedOption}
-              onChange={(e) => {
-                const updatedApiPaths = [...apiPaths];
-                updatedApiPaths[index].selectedOption = e.target.value;
-                setApiPaths(updatedApiPaths);
-              }}
-            >
-              <option value="get">get</option>
-              <option value="post">post</option>
-              <option value="put">put</option>
-              <option value="delete">delete</option>
-            </select>
-          </label>
-          <br />
-
-          <div>
-            Select Environment:
-            <label>
-              <input
-                type="radio"
-                value="SIT"
-                checked={item.selectedEnvironment === 'SIT'}
-                onChange={() => {
-                  const updatedApiPaths = [...apiPaths];
-                  updatedApiPaths[index].selectedEnvironment = 'SIT';
-                  setApiPaths(updatedApiPaths);
-                }}
-              />
-              SIT
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="DEVQA"
-                checked={item.selectedEnvironment === 'DEVQA'}
-                onChange={() => {
-                  const updatedApiPaths = [...apiPaths];
-                  updatedApiPaths[index].selectedEnvironment = 'DEVQA';
-                  setApiPaths(updatedApiPaths);
-                }}
-              />
-              DEVQA
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="AAT"
-                checked={item.selectedEnvironment === 'AAT'}
-                onChange={() => {
-                  const updatedApiPaths = [...apiPaths];
-                  updatedApiPaths[index].selectedEnvironment = 'AAT';
-                  setApiPaths(updatedApiPaths);
-                }}
-              />
-              AAT
-            </label>
-                      </div>
-          <br />
-
-          <label>
-            Param Value:
-            {item.params.map((param, paramIndex) => (
-              <div key={paramIndex}>
+          {apiPaths.map((item, apiIndex) => (
+            <div key={apiIndex}>
+              <label>
+                API Path:
                 <input
                   type="text"
-                  value={param}
+                  value={item.path}
                   onChange={(e) => {
                     const updatedApiPaths = [...apiPaths];
-                    updatedApiPaths[index].paramValue[paramIndex] = e.target.value;
+                    updatedApiPaths[apiIndex].path = e.target.value;
                     setApiPaths(updatedApiPaths);
                   }}
                 />
-              </div>
-            ))}
-            <button onClick={() => handleAddApiParams(index)}>Add Api Params +</button>
-          </label>
-          <br />
+              </label>
+              <br />
+
+              <label>
+                Select an Option:
+                <select
+                  value={item.method}
+                  onChange={(e) => {
+                    const updatedApiPaths = [...apiPaths];
+                    updatedApiPaths[apiIndex].method = e.target.value;
+                    setApiPaths(updatedApiPaths);
+                  }}
+                >
+                  <option value="get">get</option>
+                  <option value="post">post</option>
+                  <option value="put">put</option>
+                  <option value="delete">delete</option>
+                </select>
+              </label>
+              <br />
+
+              <h3>Parameters:</h3>
+              {item.params.map((param, paramIndex) => (
+                <div key={paramIndex}>
+                  <input
+                    type="text"
+                    value={param.key}
+                    onChange={(e) => handleKeyValuePairChange(apiIndex, paramIndex, 'key', e.target.value)}
+                    placeholder="Key"
+                  />
+                  <input
+                    type="text"
+                    value={param.value}
+                    onChange={(e) => handleKeyValuePairChange(apiIndex, paramIndex, 'value', e.target.value)}
+                    placeholder="Value"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={param.environments.includes('SIT')}
+                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'SIT')}
+                      />
+                    }
+                    label="SIT"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={param.environments.includes('DEVQA')}
+                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'DEVQA')}
+                      />
+                    }
+                    label="DEVQA"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={param.environments.includes('AAT')}
+                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'AAT')}
+                      />
+                    }
+                    label="AAT"
+                  />
+                </div>
+              ))}
+              <button onClick={() => handleAddKeyValuePair(apiIndex)}>Add Parameter +</button>
+
+              <br />
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-
-
       </div>
-    </Container >
+    </Container>
   );
 };
 
