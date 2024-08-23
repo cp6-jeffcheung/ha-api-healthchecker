@@ -7,7 +7,7 @@ import {
 } from "store/slices/apiSlices";
 import host from "assets/json/host.json";
 
-export const callAPI = (apiPath, params, environment) => async (dispatch) => {
+export const callAPI = (apiPath, params, environment, method = 'GET', body = null) => async (dispatch) => {
   dispatch(setApiStatus({ path: apiPath, status: "loading", environment }));
   const startTime = Date.now();
 
@@ -18,16 +18,25 @@ export const callAPI = (apiPath, params, environment) => async (dispatch) => {
     
     const environmentParams = params;
     
-    if (environmentParams && typeof environmentParams === 'object' && Object.keys(environmentParams).length > 0) {
+    if (method === 'GET' && environmentParams && typeof environmentParams === 'object' && Object.keys(environmentParams).length > 0) {
       apiFullUrl += Object.entries(environmentParams)
         .map(([key, value], idx) => `${idx === 0 ? "?" : "&"}${key}=${value}`)
         .join("");
     }
 
-    const resp = await axios.get(apiFullUrl, { 
+    let resp;
+    const axiosConfig = {
       responseType: 'text',
       transformResponse: [(data) => data],
-    });
+    };
+
+    if (method === 'GET') {
+      resp = await axios.get(apiFullUrl, axiosConfig);
+    } else if (method === 'POST') {
+      resp = await axios.post(apiFullUrl, body, axiosConfig);
+    } else {
+      throw new Error(`Unsupported HTTP method: ${method}`);
+    }
 
     const endTime = Date.now();
     const responseTime = endTime - startTime;
@@ -77,7 +86,6 @@ export const callAPI = (apiPath, params, environment) => async (dispatch) => {
     let errorMessage = err.message;
 
     if (err.response) {
-
         errorMessage = `${errorCode} ${err.response.statusText}: ${err.response.data}`;
     }
 

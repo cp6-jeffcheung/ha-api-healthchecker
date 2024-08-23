@@ -2,6 +2,7 @@
   "apis": [
     {
       "path": "app-config/view-mode",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -25,6 +26,7 @@
     },
     {
       "path": "app-config/maintenance-mode",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -54,6 +56,7 @@
     },
     {
       "path": "app-config/default-ward",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -74,6 +77,7 @@
     },
     {
       "path": "app-config/psp-wardList",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -100,6 +104,7 @@
     },
     {
       "path": "app-config/smartccParm",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -120,6 +125,7 @@
     },
     {
       "path": "app-config/get-specialty-list",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -143,6 +149,7 @@
     },
     {
       "path": "app-config/get-sub-specialty-list",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -166,6 +173,7 @@
     },
     {
       "path": "display/view-mode",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -201,6 +209,7 @@
     },
     {
       "path": "display/view-mode/patient-detail",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -230,6 +239,7 @@
     },
     {
       "path": "display/get-patient-ward",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -253,6 +263,7 @@
     },
     {
       "path": "display/maintenance-mode",
+      "method": "GET",
       "params": {
         "SIT": {
           "hospCode": "VH",
@@ -283,6 +294,45 @@
           "specialty": "MED",
           "subSpecialty": "2AFU",
           "startDate": "20240627"
+        }
+      }
+    },
+    {
+      "path": "list-view/preview",
+      "method": "POST",
+      "params": {
+        "SIT": {
+          "colFormatJsonStr": "{\"width\":110,\"headerName\":\"preview\",\"fields\":[{\"catId\":1,\"dataId\":4,\"itemId\":null,\"dataChecked\":true}]}",
+          "wardLocation": "5A",
+          "wardCode": "5A",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "hospCode": "VH",
+          "cvdbDisSettingCompareList": "[]",
+          "cvdbDisSettingTxtList":"[]"
+        },
+        "DEVQA": {
+          "colFormatJsonStr": "{\"width\":110,\"headerName\":\"preview\",\"fields\":[{\"catId\":1,\"dataId\":4,\"itemId\":null,\"dataChecked\":true}]}",
+          "wardLocation": "5A",
+          "wardCode": "5A",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "hospCode": "VH",
+          "cvdbDisSettingCompareList": "[]",
+          "cvdbDisSettingTxtList":"[]"
+        },
+        "AAT": {
+          "colFormatJsonStr": "{\"width\":110,\"headerName\":\"preview\",\"fields\":[{\"catId\":1,\"dataId\":4,\"itemId\":null,\"dataChecked\":true}]}",
+          "wardLocation": "5A",
+          "wardCode": "5A",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "hospCode": "VH",
+          "cvdbDisSettingCompareList": "[]",
+          "cvdbDisSettingTxtList":"[]"
         }
       }
     }

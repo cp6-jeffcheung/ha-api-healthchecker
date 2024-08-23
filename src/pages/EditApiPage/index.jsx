@@ -14,6 +14,9 @@ import {
   Tabs,
   Tab,
   Paper,
+  Select,
+  MenuItem,
+  Chip,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -23,6 +26,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ReactJson from "react-json-view";
 
 const environments = ["SIT", "DEVQA", "AAT"];
+const httpMethods = ["GET", "POST"];
 
 const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
   const fileInputRef = useRef(null);
@@ -31,9 +35,10 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
   const [currentEnv, setCurrentEnv] = useState("SIT");
   const [selectedPath, setSelectedPath] = useState("");
   const [newPath, setNewPath] = useState("");
+  const [newMethod, setNewMethod] = useState("GET");
   const [newParamKey, setNewParamKey] = useState("");
   const [newParamValue, setNewParamValue] = useState("");
-  const [dividerPosition, setDividerPosition] = useState(30);
+  const [dividerPosition, setDividerPosition] = useState(37);
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -171,12 +176,14 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
           ...prevState.apis,
           {
             path: newPath,
+            method: newMethod,
             params: environments.reduce((acc, env) => ({ ...acc, [env]: {} }), {}),
           },
         ],
       }));
       setSelectedPath(newPath);
       setNewPath("");
+      setNewMethod("GET");
     }
   };
 
@@ -203,8 +210,23 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
     return selectedApi?.params?.[currentEnv] || {};
   };
 
+  const getSelectedApiMethod = () => {
+    const selectedApi = currentApiObject.apis.find((api) => api.path === selectedPath);
+    return selectedApi?.method || "GET";
+  };
+
+  const handleMethodChange = (event) => {
+    const newMethod = event.target.value;
+    setCurrentApiObject((prevState) => ({
+      ...prevState,
+      apis: prevState.apis.map((api) =>
+        api.path === selectedPath ? { ...api, method: newMethod } : api
+      ),
+    }));
+  };
+
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth={false} sx={{ maxWidth: '2000px' }}> 
       <Box sx={{ my: 4 }} ref={containerRef}>
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
           <Box display="flex" position="relative">
@@ -223,6 +245,12 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
                       '&:hover': { backgroundColor: 'action.hover' },
                     }}
                   >
+                    <Chip
+                      label={api.method}
+                      color={api.method === "GET" ? "primary" : "secondary"}
+                      size="small"
+                      sx={{ mr: 1, minWidth: 50 }}
+                    />
                     <ListItemText primary={api.path} />
                     <IconButton onClick={() => handleDeletePath(index)} size="small">
                       <DeleteIcon />
@@ -231,20 +259,38 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
                 ))}
               </List>
               <Box sx={{ mt: 2 }}>
-                <TextField
-                  label="New API Path"
-                  value={newPath}
-                  onChange={(e) => setNewPath(e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={{ mb: 1 }}
-                />
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={3}>
+                    <Select
+                      value={newMethod}
+                      onChange={(e) => setNewMethod(e.target.value)}
+                      fullWidth
+                      size="small"
+                    >
+                      {httpMethods.map((method) => (
+                        <MenuItem key={method} value={method}>
+                          {method}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+                  <Grid item xs={9}>
+                    <TextField
+                      label="New API Path"
+                      value={newPath}
+                      onChange={(e) => setNewPath(e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Grid>
+                </Grid>
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleAddPath}
                   startIcon={<AddIcon />}
                   fullWidth
+                  sx={{ mt: 1 }}
                 >
                   Add Path
                 </Button>
@@ -267,21 +313,34 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
               <Typography variant="h6" gutterBottom>
                 Edit Parameters for:
               </Typography>
-              <Typography 
-                variant="h5" 
-                component="div" 
-                sx={{ 
-                  mb: 2, 
-                  fontWeight: 'bold', 
-                  color: 'primary.main',
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  display: 'inline-block'
-                }}
-              >
-                {selectedPath}
-              </Typography>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Typography 
+                  variant="h5" 
+                  component="div" 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    color: 'primary.main',
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    display: 'inline-block',
+                    mr: 2
+                  }}
+                >
+                  {selectedPath}
+                </Typography>
+                <Select
+                  value={getSelectedApiMethod()}
+                  onChange={handleMethodChange}
+                  size="small"
+                >
+                  {httpMethods.map((method) => (
+                    <MenuItem key={method} value={method}>
+                      {method}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
               <Tabs value={currentEnv} onChange={handleEnvChange} sx={{ mb: 2 }}>
                 {environments.map((env) => (
                   <Tab key={env} label={env} value={env} />

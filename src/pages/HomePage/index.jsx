@@ -81,15 +81,6 @@ const HomePage = () => {
   });
   const [hasStarted, setHasStarted] = useState(false);
 
-  useEffect(() => {
-    try {
-      const parsedConfig = JSON.parse(apiJson);
-      setApiConfig(parsedConfig);
-    } catch (error) {
-      console.error("Invalid JSON format:", error);
-    }
-  }, [apiJson]);
-
   const responseTimeCounts = getResponseTimeCounts(
     selectedEnvironments,
     responseTimes
@@ -169,7 +160,15 @@ const HomePage = () => {
       selectedEnvironments.forEach((env) => {
         try {
           const apiParams = api.params[env] || {};
-          dispatch(callAPI(api.path, apiParams, env));
+          const method = api.method.toUpperCase();
+          
+          if (method === 'GET') {
+            dispatch(callAPI(api.path, apiParams, env, 'GET'));
+          } else if (method === 'POST') {
+            dispatch(callAPI(api.path, {}, env, 'POST', apiParams));
+          } else {
+            console.warn(`Unsupported method: ${method} for API: ${api.path}`);
+          }
         } catch (error) {
           console.error(
             `Error calling API for path: ${api.path}, env: ${env}`,
@@ -279,7 +278,43 @@ const HomePage = () => {
       <Main open={open}>
         <DrawerHeader />
         <Container maxWidth="lg">
-          <Box sx={{ my: 4 }}>{renderPage()}</Box>
+          <Box sx={{ my: 4 }}>
+            {currentPage === "home" && (
+              <>
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+                  <EnvironmentSelector
+                    selectedEnvironments={selectedEnvironments}
+                    handleEnvironmentChange={handleEnvironmentChange}
+                    handleStartClick={handleStartClick}
+                    theme={theme}
+                  />
+                </Box>
+                <ChartSection
+                  chartData={chartData}
+                  statusCodeCounts={statusCodeCounts}
+                  handleChartDataPointSelection={handleChartDataPointSelection}
+                  hasStarted={hasStarted}
+                />
+                <APIList
+                  filter={filter}
+                  setFilter={setFilter}
+                  filteredApis={filteredApis}
+                  searchQuery={searchQuery}
+                  handleSearchChange={handleSearchChange}
+                  apiConfig={apiConfig}
+                />
+              </>
+            )}
+            {currentPage === "edit" && (
+              <EditApiPage
+                apiJson={apiJson}
+                setApiJson={setApiJson}
+                apiConfig={apiConfig}
+                setApiConfig={setApiConfig}
+                setSnackbar={setSnackbar}
+              />
+            )}
+          </Box>
         </Container>
       </Main>
       <Snackbar

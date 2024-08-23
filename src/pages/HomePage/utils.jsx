@@ -14,6 +14,9 @@ import {
   TextField,
   IconButton,
   Collapse,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import APIPath from "components/APIPath";
 import SuccessFailChart from "components/SuccessFailChart";
@@ -141,50 +144,67 @@ export const APIList = ({
   filteredApis,
   searchQuery,
   handleSearchChange,
+  apiConfig
 }) => (
   <Box mt={4}>
     <Box
       display="flex"
-      justifyContent="space-between"
+      justifyContent="center"
       alignItems="center"
       mb={2}
     >
-      {filter && (
-        <Chip
-          label={`Filtered: ${filter}`}
-          onDelete={() => setFilter(null)}
-          color="primary"
-          sx={{ fontWeight: "bold", borderRadius: 2 }}
+      <Box width="100%" maxWidth="800px" display="flex" justifyContent="space-between" alignItems="center">
+        {filter && (
+          <Chip
+            label={`Filtered: ${filter}`}
+            onDelete={() => setFilter(null)}
+            color="primary"
+            sx={{ fontWeight: "bold", borderRadius: 2 }}
+          />
+        )}
+        <TextField
+          label="Search API Path"
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          sx={{ width: "300px" }}
         />
-      )}
-      <TextField
-        label="Search API Path"
-        variant="outlined"
-        size="small"
-        value={searchQuery}
-        onChange={handleSearchChange}
-        sx={{ width: "300px" }}
-      />
+      </Box>
     </Box>
-    <Paper
-      elevation={3}
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        background: alpha("#fff", 0.8),
-        backdropFilter: "blur(10px)",
-      }}
-    >
-      {filteredApis.length > 0 ? (
-        filteredApis.map((api, idx) => (
-          <APIPath key={idx} path={api.path} params={api.params} />
-        ))
-      ) : (
-        <Typography variant="body1" align="center">
-          No matching API paths found.
-        </Typography>
-      )}
-    </Paper>
+    <Box display="flex" justifyContent="center">
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          background: alpha("#fff", 0.8),
+          backdropFilter: "blur(10px)",
+          width: "100%",
+          maxWidth: "1000px",
+        }}
+      >
+        {filteredApis.length > 0 ? (
+          filteredApis.map((api, idx) => (
+            <Box key={idx} display="flex" alignItems="center" mb={2}>
+              <Chip
+                label={api.method.toUpperCase()}
+                color={api.method.toLowerCase() === 'get' ? 'primary' : 'secondary'}
+                size="small"
+                sx={{ mr: 2, minWidth: '60px' }}
+              />
+              <Box flexGrow={1}>
+                <APIPath path={api.path} params={api.params} />
+              </Box>
+            </Box>
+          ))
+        ) : (
+          <Typography variant="body1" align="center">
+            No matching API paths found.
+          </Typography>
+        )}
+      </Paper>
+    </Box>
   </Box>
 );
 
