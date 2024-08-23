@@ -1,53 +1,20 @@
 import React, { useRef, useState, useEffect } from "react";
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Stack,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Grid,
-  Tabs,
-  Tab,
-  Paper,
-  Select,
-  MenuItem,
-  Chip,
-} from "@mui/material";
+import { Container, Box, Button, Stack, Paper } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
 import UploadIcon from "@mui/icons-material/Upload";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ReactJson from "react-json-view";
-
-const environments = ["SIT", "DEVQA", "AAT"];
-const httpMethods = ["GET", "POST"];
+import { parseApiJson, exportJson } from "./utils";
+import ApiPathList from "./ApiPathList";
+import ApiParameterEditor from "./ApiParameterEditor";
 
 const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
   const fileInputRef = useRef(null);
-  const containerRef = useRef(null);
   const [currentApiObject, setCurrentApiObject] = useState({ apis: [] });
   const [currentEnv, setCurrentEnv] = useState("SIT");
   const [selectedPath, setSelectedPath] = useState("");
-  const [newPath, setNewPath] = useState("");
-  const [newMethod, setNewMethod] = useState("GET");
-  const [newParamKey, setNewParamKey] = useState("");
-  const [newParamValue, setNewParamValue] = useState("");
-  const [dividerPosition, setDividerPosition] = useState(37);
-  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    try {
-      const parsed = JSON.parse(apiJson);
-      setCurrentApiObject(parsed);
-    } catch (error) {
-      setCurrentApiObject({ apis: [] });
-    }
+    setCurrentApiObject(parseApiJson(apiJson));
   }, [apiJson]);
 
   useEffect(() => {
@@ -55,29 +22,6 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
       setSelectedPath(currentApiObject.apis[0].path);
     }
   }, [currentApiObject.apis, selectedPath]);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging || !containerRef.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newPosition = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-      setDividerPosition(Math.max(20, Math.min(80, newPosition)));
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]);
 
   const handleApiJsonSave = () => {
     try {
@@ -99,15 +43,7 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
   };
 
   const handleExportJson = () => {
-    const blob = new Blob([JSON.stringify(currentApiObject, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "API.json";
-    link.click();
-    URL.revokeObjectURL(url);
+    exportJson(currentApiObject);
     setSnackbar({
       open: true,
       message: "API configuration exported successfully",
@@ -143,304 +79,24 @@ const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
     }
   };
 
-  const handleAddParam = () => {
-    if (newParamKey && newParamValue && selectedPath) {
-      setCurrentApiObject((prevState) => {
-        const updatedApis = prevState.apis.map((api) => {
-          if (api.path === selectedPath) {
-            return {
-              ...api,
-              params: {
-                ...api.params,
-                [currentEnv]: {
-                  ...(api.params[currentEnv] || {}),
-                  [newParamKey]: newParamValue,
-                },
-              },
-            };
-          }
-          return api;
-        });
-        return { ...prevState, apis: updatedApis };
-      });
-      setNewParamKey("");
-      setNewParamValue("");
-    }
-  };
-
-  const handleAddPath = () => {
-    if (newPath) {
-      setCurrentApiObject((prevState) => ({
-        ...prevState,
-        apis: [
-          ...prevState.apis,
-          {
-            path: newPath,
-            method: newMethod,
-            params: environments.reduce((acc, env) => ({ ...acc, [env]: {} }), {}),
-          },
-        ],
-      }));
-      setSelectedPath(newPath);
-      setNewPath("");
-      setNewMethod("GET");
-    }
-  };
-
-  const handleDeletePath = (index) => {
-    setCurrentApiObject((prevState) => {
-      const updatedApis = prevState.apis.filter((_, i) => i !== index);
-      if (updatedApis.length > 0 && selectedPath === prevState.apis[index].path) {
-        setSelectedPath(updatedApis[0].path);
-      }
-      return { ...prevState, apis: updatedApis };
-    });
-  };
-
-  const handleEnvChange = (_, newValue) => {
-    setCurrentEnv(newValue);
-  };
-
-  const handlePathSelect = (path) => {
-    setSelectedPath(path);
-  };
-
-  const getSelectedApiParams = () => {
-    const selectedApi = currentApiObject.apis.find((api) => api.path === selectedPath);
-    return selectedApi?.params?.[currentEnv] || {};
-  };
-
-  const getSelectedApiMethod = () => {
-    const selectedApi = currentApiObject.apis.find((api) => api.path === selectedPath);
-    return selectedApi?.method || "GET";
-  };
-
-  const handleMethodChange = (event) => {
-    const newMethod = event.target.value;
-    setCurrentApiObject((prevState) => ({
-      ...prevState,
-      apis: prevState.apis.map((api) =>
-        api.path === selectedPath ? { ...api, method: newMethod } : api
-      ),
-    }));
-  };
-
   return (
-    <Container maxWidth={false} sx={{ maxWidth: '2000px' }}> 
-      <Box sx={{ my: 4 }} ref={containerRef}>
+    <Container maxWidth={false} sx={{ maxWidth: "2000px" }}>
+      <Box sx={{ my: 4 }}>
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-          <Box display="flex" position="relative">
-            <Box width={`${dividerPosition}%`} pr={2}>
-              <Typography variant="h6" gutterBottom>
-                API Paths
-              </Typography>
-              <List sx={{ maxHeight: '500px', overflowY: 'auto', mb: 2 }}>
-                {currentApiObject.apis.map((api, index) => (
-                  <ListItem
-                    key={index}
-                    onClick={() => handlePathSelect(api.path)}
-                    sx={{
-                      cursor: "pointer",
-                      backgroundColor: selectedPath === api.path ? "action.selected" : "inherit",
-                      '&:hover': { backgroundColor: 'action.hover' },
-                    }}
-                  >
-                    <Chip
-                      label={api.method}
-                      color={api.method === "GET" ? "primary" : "secondary"}
-                      size="small"
-                      sx={{ mr: 1, minWidth: 50 }}
-                    />
-                    <ListItemText primary={api.path} />
-                    <IconButton onClick={() => handleDeletePath(index)} size="small">
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
-              <Box sx={{ mt: 2 }}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={3}>
-                    <Select
-                      value={newMethod}
-                      onChange={(e) => setNewMethod(e.target.value)}
-                      fullWidth
-                      size="small"
-                    >
-                      {httpMethods.map((method) => (
-                        <MenuItem key={method} value={method}>
-                          {method}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Grid>
-                  <Grid item xs={9}>
-                    <TextField
-                      label="New API Path"
-                      value={newPath}
-                      onChange={(e) => setNewPath(e.target.value)}
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                </Grid>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleAddPath}
-                  startIcon={<AddIcon />}
-                  fullWidth
-                  sx={{ mt: 1 }}
-                >
-                  Add Path
-                </Button>
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                position: "absolute",
-                left: `${dividerPosition}%`,
-                top: 0,
-                bottom: 0,
-                width: "4px",
-                backgroundColor: "grey.300",
-                cursor: "col-resize",
-                "&:hover": { backgroundColor: "primary.main" },
-              }}
-              onMouseDown={() => setIsDragging(true)}
+          <Box display="flex">
+            <ApiPathList
+              currentApiObject={currentApiObject}
+              setCurrentApiObject={setCurrentApiObject}
+              selectedPath={selectedPath}
+              setSelectedPath={setSelectedPath}
             />
-            <Box width={`${100 - dividerPosition}%`} pl={2}>
-              <Typography variant="h6" gutterBottom>
-                Edit Parameters for:
-              </Typography>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Typography 
-                  variant="h5" 
-                  component="div" 
-                  sx={{ 
-                    fontWeight: 'bold', 
-                    color: 'primary.main',
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    display: 'inline-block',
-                    mr: 2
-                  }}
-                >
-                  {selectedPath}
-                </Typography>
-                <Select
-                  value={getSelectedApiMethod()}
-                  onChange={handleMethodChange}
-                  size="small"
-                >
-                  {httpMethods.map((method) => (
-                    <MenuItem key={method} value={method}>
-                      {method}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-              <Tabs value={currentEnv} onChange={handleEnvChange} sx={{ mb: 2 }}>
-                {environments.map((env) => (
-                  <Tab key={env} label={env} value={env} />
-                ))}
-              </Tabs>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={5}>
-                  <TextField
-                    label="Parameter Key"
-                    value={newParamKey}
-                    onChange={(e) => setNewParamKey(e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={5}>
-                  <TextField
-                    label="Parameter Value"
-                    value={newParamValue}
-                    onChange={(e) => setNewParamValue(e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleAddParam}
-                    fullWidth
-                    sx={{ height: '100%' }}
-                  >
-                    Add
-                  </Button>
-                </Grid>
-              </Grid>
-              <Typography variant="subtitle1" gutterBottom>
-                Current Parameters for {currentEnv}:
-              </Typography>
-              <Paper elevation={3} sx={{ p: 2, mb: 2, maxHeight: '350px', overflowY: 'auto' }}>
-                <ReactJson
-                  src={getSelectedApiParams()}
-                  displayDataTypes={false}
-                  name={null}
-                  enableClipboard={false}
-                  onEdit={(edit) => {
-                    setCurrentApiObject((prevState) => {
-                      const updatedApis = prevState.apis.map((api) => {
-                        if (api.path === selectedPath) {
-                          return {
-                            ...api,
-                            params: {
-                              ...api.params,
-                              [currentEnv]: edit.updated_src,
-                            },
-                          };
-                        }
-                        return api;
-                      });
-                      return { ...prevState, apis: updatedApis };
-                    });
-                  }}
-                  onDelete={(deleteEdit) => {
-                    setCurrentApiObject((prevState) => {
-                      const updatedApis = prevState.apis.map((api) => {
-                        if (api.path === selectedPath) {
-                          return {
-                            ...api,
-                            params: {
-                              ...api.params,
-                              [currentEnv]: deleteEdit.updated_src,
-                            },
-                          };
-                        }
-                        return api;
-                      });
-                      return { ...prevState, apis: updatedApis };
-                    });
-                  }}
-                  onAdd={(addEdit) => {
-                    setCurrentApiObject((prevState) => {
-                      const updatedApis = prevState.apis.map((api) => {
-                        if (api.path === selectedPath) {
-                          return {
-                            ...api,
-                            params: {
-                              ...api.params,
-                              [currentEnv]: addEdit.updated_src,
-                            },
-                          };
-                        }
-                        return api;
-                      });
-                      return { ...prevState, apis: updatedApis };
-                    });
-                  }}
-                  style={{ textAlign: 'left' }}
-                />
-              </Paper>
-            </Box>
+            <ApiParameterEditor
+              currentApiObject={currentApiObject}
+              setCurrentApiObject={setCurrentApiObject}
+              selectedPath={selectedPath}
+              currentEnv={currentEnv}
+              setCurrentEnv={setCurrentEnv}
+            />
           </Box>
         </Paper>
         <Stack direction="row" spacing={2} justifyContent="flex-end">

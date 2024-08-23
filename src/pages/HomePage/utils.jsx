@@ -11,12 +11,13 @@ import {
   Chip,
   useTheme,
   alpha,
-  TextField,
   IconButton,
   Collapse,
-  List,
-  ListItem,
-  ListItemText,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import APIPath from "components/APIPath";
 import SuccessFailChart from "components/SuccessFailChart";
@@ -138,40 +139,8 @@ const ChartBox = ({ title, children }) => (
   </Box>
 );
 
-export const APIList = ({
-  filter,
-  setFilter,
-  filteredApis,
-  searchQuery,
-  handleSearchChange,
-  apiConfig
-}) => (
+export const APIList = ({ filteredApis }) => (
   <Box mt={4}>
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      mb={2}
-    >
-      <Box width="100%" maxWidth="800px" display="flex" justifyContent="space-between" alignItems="center">
-        {filter && (
-          <Chip
-            label={`Filtered: ${filter}`}
-            onDelete={() => setFilter(null)}
-            color="primary"
-            sx={{ fontWeight: "bold", borderRadius: 2 }}
-          />
-        )}
-        <TextField
-          label="Search API Path"
-          variant="outlined"
-          size="small"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          sx={{ width: "300px" }}
-        />
-      </Box>
-    </Box>
     <Box display="flex" justifyContent="center">
       <Paper
         elevation={3}
@@ -189,9 +158,11 @@ export const APIList = ({
             <Box key={idx} display="flex" alignItems="center" mb={2}>
               <Chip
                 label={api.method.toUpperCase()}
-                color={api.method.toLowerCase() === 'get' ? 'primary' : 'secondary'}
+                color={
+                  api.method.toLowerCase() === "get" ? "primary" : "secondary"
+                }
                 size="small"
-                sx={{ mr: 2, minWidth: '60px' }}
+                sx={{ mr: 2, minWidth: "60px" }}
               />
               <Box flexGrow={1}>
                 <APIPath path={api.path} params={api.params} />
@@ -316,3 +287,33 @@ export const EnvironmentSelector = ({
     </Paper>
   );
 };
+
+export const FilterSection = ({
+  methodFilter,
+  handleMethodFilterChange,
+  searchQuery,
+  handleSearchChange,
+}) => (
+  <Box sx={{ display: "flex", mb: 2, gap: 2, justifyContent: "center" }}>
+    <FormControl variant="outlined" size="small" sx={{ width: "150px" }}>
+      <InputLabel>Method</InputLabel>
+      <Select
+        value={methodFilter}
+        onChange={handleMethodFilterChange}
+        label="Method"
+      >
+        <MenuItem value="ALL">All</MenuItem>
+        <MenuItem value="GET">GET</MenuItem>
+        <MenuItem value="POST">POST</MenuItem>
+      </Select>
+    </FormControl>
+    <TextField
+      label="Search APIs"
+      variant="outlined"
+      value={searchQuery}
+      onChange={handleSearchChange}
+      size="small"
+      sx={{ width: "300px" }}
+    />
+  </Box>
+);

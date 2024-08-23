@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { forEach, sortBy } from "lodash";
 import {
-  Container,
   Box,
   Typography,
   useTheme,
@@ -17,7 +16,12 @@ import {
   getStatusCounts,
   getStatusCodeCounts,
 } from "utils/dataProcessing";
-import { ChartSection, APIList, EnvironmentSelector } from "./utils";
+import {
+  ChartSection,
+  APIList,
+  EnvironmentSelector,
+  FilterSection,
+} from "./utils";
 import { Drawer, DrawerHeader, drawerWidth } from "components/Layout/Drawer";
 import { AppBar } from "components/Layout/Appbar";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -70,7 +74,7 @@ const HomePage = () => {
 
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { selectedEnvironments, params, status, statusCodes, responseTimes } =
+  const { selectedEnvironments, status, statusCodes, responseTimes } =
     useSelector((state) => state.api);
   const [filter, setFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +84,7 @@ const HomePage = () => {
     severity: "success",
   });
   const [hasStarted, setHasStarted] = useState(false);
+  const [methodFilter, setMethodFilter] = useState("ALL");
 
   const responseTimeCounts = getResponseTimeCounts(
     selectedEnvironments,
@@ -115,6 +120,10 @@ const HomePage = () => {
       );
     }
 
+    if (methodFilter !== "ALL") {
+      apis = apis.filter((api) => api.method.toUpperCase() === methodFilter);
+    }
+
     if (!filter) return apis;
     return apis.filter((api) =>
       selectedEnvironments.some((env) => {
@@ -140,15 +149,11 @@ const HomePage = () => {
     responseTimes,
     searchQuery,
     apiConfig,
+    methodFilter,
   ]);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
+  const handleDrawerOpen = () => setOpen(true);
+  const handleDrawerClose = () => setOpen(false);
 
   const handleEnvironmentChange = (_, newEnvironments) => {
     dispatch(setSelectedEnvironments(newEnvironments));
@@ -161,11 +166,11 @@ const HomePage = () => {
         try {
           const apiParams = api.params[env] || {};
           const method = api.method.toUpperCase();
-          
-          if (method === 'GET') {
-            dispatch(callAPI(api.path, apiParams, env, 'GET'));
-          } else if (method === 'POST') {
-            dispatch(callAPI(api.path, {}, env, 'POST', apiParams));
+
+          if (method === "GET") {
+            dispatch(callAPI(api.path, apiParams, env, "GET"));
+          } else if (method === "POST") {
+            dispatch(callAPI(api.path, {}, env, "POST", apiParams));
           } else {
             console.warn(`Unsupported method: ${method} for API: ${api.path}`);
           }
@@ -196,14 +201,11 @@ const HomePage = () => {
     );
   };
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
+  const handleSearchChange = (event) => setSearchQuery(event.target.value);
+  const handleMethodFilterChange = (event) =>
+    setMethodFilter(event.target.value);
+  const handleSnackbarClose = (_, reason) => {
+    if (reason === "clickaway") return;
     setSnackbar({ ...snackbar, open: false });
   };
 
@@ -226,14 +228,13 @@ const HomePage = () => {
               handleChartDataPointSelection={handleChartDataPointSelection}
               hasStarted={hasStarted}
             />
-            <APIList
-              filter={filter}
-              setFilter={setFilter}
-              filteredApis={filteredApis}
+            <FilterSection
+              methodFilter={methodFilter}
+              handleMethodFilterChange={handleMethodFilterChange}
               searchQuery={searchQuery}
               handleSearchChange={handleSearchChange}
-              apiConfig={apiConfig}
             />
+            <APIList filteredApis={filteredApis} />
           </>
         );
       case "edit":
@@ -277,45 +278,7 @@ const HomePage = () => {
       />
       <Main open={open}>
         <DrawerHeader />
-        <Container maxWidth="lg">
-          <Box sx={{ my: 4 }}>
-            {currentPage === "home" && (
-              <>
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                  <EnvironmentSelector
-                    selectedEnvironments={selectedEnvironments}
-                    handleEnvironmentChange={handleEnvironmentChange}
-                    handleStartClick={handleStartClick}
-                    theme={theme}
-                  />
-                </Box>
-                <ChartSection
-                  chartData={chartData}
-                  statusCodeCounts={statusCodeCounts}
-                  handleChartDataPointSelection={handleChartDataPointSelection}
-                  hasStarted={hasStarted}
-                />
-                <APIList
-                  filter={filter}
-                  setFilter={setFilter}
-                  filteredApis={filteredApis}
-                  searchQuery={searchQuery}
-                  handleSearchChange={handleSearchChange}
-                  apiConfig={apiConfig}
-                />
-              </>
-            )}
-            {currentPage === "edit" && (
-              <EditApiPage
-                apiJson={apiJson}
-                setApiJson={setApiJson}
-                apiConfig={apiConfig}
-                setApiConfig={setApiConfig}
-                setSnackbar={setSnackbar}
-              />
-            )}
-          </Box>
-        </Container>
+        <Box sx={{ maxWidth: "lg", mx: "auto", my: 4 }}>{renderPage()}</Box>
       </Main>
       <Snackbar
         open={snackbar.open}
