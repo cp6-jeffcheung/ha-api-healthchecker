@@ -7,10 +7,27 @@ const initialState = {
   status: { SIT: {}, DEVQA: {}, AAT: {} },
   statusCodes: { SIT: {}, DEVQA: {}, AAT: {} },
   responseTimes: { SIT: {}, DEVQA: {}, AAT: {} },
+  SIT: {
+    params: API.apis.reduce(
+      (acc, api) => ({ ...acc, [api.path]: api.SIT || {} }),
+      {}
+    )
+  },
+  DEVQA: {
+    params: API.apis.reduce(
+      (acc, api) => ({ ...acc, [api.path]: api.DEVQA || {} }),
+      {}
+    )
+  }
+,
+AAT: {
   params: API.apis.reduce(
-    (acc, api) => ({ ...acc, [api.path]: api.params || {} }),
+    (acc, api) => ({ ...acc, [api.path]: api.AAT || {} }),
     {}
-  ),
+  )
+}
+,
+  
   selectedEnvironments: ["SIT"],
 };
 
@@ -43,12 +60,6 @@ const apiSlice = createSlice({
       const { path, responseTime, environment } = action.payload;
       state.responseTimes[environment][path] = responseTime;
     },
-    resetResponses: (state) => {
-      state.responses = { SIT: {}, DEVQA: {}, AAT: {} };
-      state.status = { SIT: {}, DEVQA: {}, AAT: {} };
-      state.statusCodes = { SIT: {}, DEVQA: {}, AAT: {} };
-      state.responseTimes = { SIT: {}, DEVQA: {}, AAT: {} };
-    },
   },
 });
 
@@ -59,6 +70,5 @@ export const {
   updateApiParams,
   setSelectedEnvironments,
   setApiResponseTime,
-  resetResponses
 } = apiSlice.actions;
 export default apiSlice.reducer;

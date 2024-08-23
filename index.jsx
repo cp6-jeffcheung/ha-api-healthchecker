@@ -1,298 +1,417 @@
-import React, { useRef, useState } from "react";
-import { Container, Box, Typography, Paper, TextField, Button, Grid, Checkbox, FormControlLabel } from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
-import DownloadIcon from "@mui/icons-material/Download";
-import UploadIcon from "@mui/icons-material/Upload";
-import JSONViewer from './JSONViewer';
-import data from 'assets/json/API.json';
+import React, { useState, useCallback, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { Accordion, AccordionSummary, AccordionDetails, Typography, Grid, Chip, Tabs, Tab, Box, Paper, FormControl, InputLabel, Select, MenuItem, useTheme, Tooltip } from "@mui/material";
+import ReactJson from "react-json-view";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import CompareIcon from "@mui/icons-material/Compare";
+import { updateApiParams } from "store/slices/apiSlices";
+import ComparisonGrid from "./ComparisonGrid";
+import { getStatusColor, isValidResponse, truncateValue } from "utils/apiUtils";
 
-const EditApiPage = ({ apiJson, setApiJson, setApiConfig, setSnackbar }) => {
-  const fileInputRef = useRef(null);
-  const [apiPaths, setApiPaths] = useState([
-    {
-      method: "post",
-      path: "",
-      params: [{ key: "", value: "", environments: [] }]
+const APIPath = ({ path }) => {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const [expanded, setExpanded] = useState(false);
+  const {
+    responses,
+    statusCodes,
+    responseTimes,
+    SIT,
+    DEVQA,
+    AAT,
+    selectedEnvironments,
+  } = useSelector((state) => state.api);
+  const [selectedEnvironment, setSelectedEnvironment] = useState(
+    selectedEnvironments[0] || ""
+  );
+  const [comparisonEnvironments, setComparisonEnvironments] = useState([]);
+  const [basisEnvironment, setBasisEnvironment] = useState("");
+
+  const response = responses[selectedEnvironment]?.[path];
+  const environmentStatuses = {
+    SIT: statusCodes.SIT[path],
+    DEVQA: statusCodes.DEVQA[path],
+    AAT: statusCodes.AAT[path],
+  };
+
+  const handleParamChange = useCallback(
+    (edit) => {
+      alert(edit)
+
+      dispatch(
+        updateApiParams({
+          path,
+          SIT: { ...SIT, [edit.name]: edit.new_value },
+        })
+      );
+    },
+    [dispatch, path, SIT]
+  );
+
+  const getUniqueKeys = (basisEnv, comparisonEnv) => {
+    const basisResponse = isValidResponse(responses[basisEnv]?.[path])
+      ? responses[basisEnv][path]
+      : {};
+    const comparisonResponse = isValidResponse(responses[comparisonEnv]?.[path])
+      ? responses[comparisonEnv][path]
+      : {};
+
+    if (typeof comparisonResponse !== "object" || comparisonResponse === null) {
+      return ["message"];
     }
-  ]);
 
-  const handleKeyValuePairChange = (apiIndex, paramIndex, field, value) => {
-    const updatedApiPaths = [...apiPaths];
-    updatedApiPaths[apiIndex].params[paramIndex][field] = value;
-    setApiPaths(updatedApiPaths);
+    return Object.keys(comparisonResponse).filter(
+      (key) => !basisResponse.hasOwnProperty(key)
+    );
   };
 
-  const handleAddKeyValuePair = (apiIndex) => {
-    const updatedApiPaths = [...apiPaths];
-    updatedApiPaths[apiIndex].params.push({ key: "", value: "", environments: [] });
-    setApiPaths(updatedApiPaths);
+  const getMissingKeys = (basisEnv, comparisonEnv) => {
+    const basisResponse = isValidResponse(responses[basisEnv]?.[path])
+      ? responses[basisEnv][path]
+      : {};
+    const comparisonResponse = isValidResponse(responses[comparisonEnv]?.[path])
+      ? responses[comparisonEnv][path]
+      : {};
+    return Object.keys(basisResponse).filter(
+      (key) => !comparisonResponse.hasOwnProperty(key)
+    );
   };
 
-  const handleAddApiPath = () => {
-    setApiPaths([...apiPaths, {
-      method: "post",
-      path: "",
-      params: [{ key: "", value: "", environments: [] }]
-    }]);
-  };
+  const getDifferentValues = (basisEnv, comparisonEnvs) => {
+    const basisResponse = isValidResponse(responses[basisEnv]?.[path])
+      ? responses[basisEnv][path]
+      : {};
+    return Object.keys(basisResponse).reduce((acc, key) => {
+      const basisValue = JSON.stringify(basisResponse[key]);
+      const row = { id: key, key, [basisEnv]: basisValue };
+      let isDifferent = false;
 
-  const handleEnvironmentToggle = (apiIndex, paramIndex, env) => {
-    const updatedApiPaths = [...apiPaths];
-    const environments = updatedApiPaths[apiIndex].params[paramIndex].environments;
-    const index = environments.indexOf(env);
-    if (index > -1) {
-      environments.splice(index, 1);
-    } else {
-      environments.push(env);
-    }
-    setApiPaths(updatedApiPaths);
-  };
-
-  const handleApiJsonSave = () => {
-    try {
-      const parsedConfig = { apis: formatApiPathsForExport(apiPaths) };
-      setApiConfig(parsedConfig);
-      setSnackbar({
-        open: true,
-        message: "API configuration updated successfully",
-        severity: "success",
-      });
-    } catch (error) {
-      setSnackbar({
-        open: true,
-        message: "Invalid API configuration format. Please check your input.",
-        severity: "error",
-      });
-    }
-  };
-
-  const formatApiPathsForExport = (apiPaths) => {
-    return apiPaths.map(api => {
-      const formattedApi = {
-        method: api.method,
-        path: api.path,
-        sit: { params: {} },
-        devqa: { params: {} },
-        aat: { params: {} }
-      };
-
-      api.params.forEach(param => {
-        param.environments.forEach(env => {
-          formattedApi[env.toLowerCase()].params[param.key] = param.value;
-        });
-      });
-
-      return formattedApi;
-    });
-  };
-
-  const handleExportJson = () => {
-    const formData = { apis: formatApiPathsForExport(apiPaths) };
-    const jsonData = JSON.stringify(formData, null, 2);
-
-    const blob = new Blob([jsonData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "FormData.json";
-    link.click();
-    URL.revokeObjectURL(url);
-    setSnackbar({
-      open: true,
-      message: "Form data exported successfully",
-      severity: "success",
-    });
-  };
-
-  const handleImportJson = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target.result;
-          setApiJson(content);
-          const parsedConfig = JSON.parse(content);
-          if (parsedConfig.apis) {
-            const formattedApiPaths = parsedConfig.apis.map(api => ({
-              method: api.method,
-              path: api.path,
-              params: Object.keys(api.sit.params).map(key => ({
-                key,
-                value: api.sit.params[key],
-                environments: ['SIT', 'DEVQA', 'AAT'].filter(env => 
-                  api[env.toLowerCase()].params[key] === api.sit.params[key]
-                )
-              }))
-            }));
-            setApiPaths(formattedApiPaths);
-            setApiConfig(parsedConfig);
-            setSnackbar({
-              open: true,
-              message: "API configuration imported successfully",
-              severity: "success",
-            });
-          } else {
-            throw new Error("Invalid JSON structure");
-          }
-        } catch (error) {
-          setSnackbar({
-            open: true,
-            message: "Invalid JSON file. Please check the file content.",
-            severity: "error",
-          });
+      comparisonEnvs.forEach((env) => {
+        if (env !== basisEnv) {
+          const comparisonResponse = isValidResponse(responses[env]?.[path])
+            ? responses[env][path]
+            : {};
+          const comparisonValue = JSON.stringify(comparisonResponse[key]);
+          row[env] = comparisonValue;
+          if (basisValue !== comparisonValue) isDifferent = true;
         }
-      };
-      reader.readAsText(file);
+      });
+
+      if (isDifferent) acc.push(row);
+      return acc;
+    }, []);
+  };
+
+  const comparisonData = useMemo(() => {
+    if (!basisEnvironment || comparisonEnvironments.length < 2) return [];
+    return comparisonEnvironments.flatMap((env) =>
+      env !== basisEnvironment
+        ? getUniqueKeys(basisEnvironment, env).map((key) => ({
+          id: `${env}-${key}`,
+          [env]:
+            typeof responses[env]?.[path] === "object"
+              ? responses[env][path][key]
+              : responses[env]?.[path] || "",
+        }))
+        : []
+    );
+  }, [basisEnvironment, comparisonEnvironments, responses, path]);
+
+  const missingKeysData = useMemo(() => {
+    if (!basisEnvironment || comparisonEnvironments.length < 2) return [];
+    return comparisonEnvironments.flatMap((env) =>
+      env !== basisEnvironment
+        ? getMissingKeys(basisEnvironment, env).map((key) => ({
+          id: `${env}-${key}`,
+          [env]: key,
+        }))
+        : []
+    );
+  }, [basisEnvironment, comparisonEnvironments, responses, path]);
+
+  const differentValuesData = useMemo(() => {
+    if (!basisEnvironment || comparisonEnvironments.length < 2) return [];
+    return getDifferentValues(basisEnvironment, comparisonEnvironments);
+  }, [basisEnvironment, comparisonEnvironments, responses, path]);
+
+  const columns = useMemo(
+    () =>
+      comparisonEnvironments
+        .filter((env) => env !== basisEnvironment)
+        .map((env) => ({ field: env, headerName: env, flex: 1 })),
+    [comparisonEnvironments, basisEnvironment]
+  );
+
+  const differentValuesColumns = useMemo(
+    () => [
+      { field: "key", headerName: "Key", flex: 1 },
+      {
+        field: basisEnvironment,
+        headerName: basisEnvironment,
+        flex: 2,
+        renderCell: (params) => (
+          <Tooltip title={params.value} placement="top">
+            <span>{truncateValue(params.value)}</span>
+          </Tooltip>
+        ),
+      },
+      ...comparisonEnvironments
+        .filter((env) => env !== basisEnvironment)
+        .map((env) => ({
+          field: env,
+          headerName: env,
+          flex: 2,
+          renderCell: (params) => (
+            <Tooltip title={params.value} placement="top">
+              <span>{truncateValue(params.value)}</span>
+            </Tooltip>
+          ),
+        })),
+    ],
+    [basisEnvironment, comparisonEnvironments]
+  );
+
+  const exportToJson = (data, fileName) => {
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+      JSON.stringify(data, null, 2)
+    )}`;
+    const link = document.createElement("a");
+    link.href = jsonString;
+    link.download = `${fileName}.json`;
+    link.click();
+  };
+  const [currentparams, setcurrentparams] = useState(SIT.params);
+
+  const updatepara = (env) => {
+    switch (env) {
+      case "SIT":
+        setcurrentparams(SIT.params);
+        return;
+        case "DEVQA":
+        setcurrentparams(DEVQA.params);
+        return;
+        case "AAT":
+        setcurrentparams(AAT.params);
+        return;
+
+
     }
-  };
 
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
-    return (
-        <Container maxWidth="lg">
-            <Box sx={{ my: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom align="center">
-                    Edit API Configuration
-                </Typography>
-                <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-                    <div></div>
-                    <Grid container spacing={2} justifyContent="center">
-                        <Grid item>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleApiJsonSave}
-                                startIcon={<SaveIcon />}
-                            >
-                                Save Changes
-                            </Button>
-                        </Grid>
-                        <Grid item>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={handleExportJson}
-                                startIcon={<DownloadIcon />}
-                            >
-                                Export JSON
-                            </Button>
-                        </Grid>
-                        <Grid item>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={triggerFileInput}
-                                startIcon={<UploadIcon />}
-                            >
-                                Import JSON
-                            </Button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                style={{ display: "none" }}
-                                onChange={handleImportJson}
-                                accept=".json"
-                            />
-                        </Grid>
-                    </Grid>
-                </Paper>
-            </Box>
-            <h1>JSON Viewer</h1>
-            <JSONViewer jsonData={data} />
 
-            <div>
-        <h2>API Input Form</h2>
-        <button onClick={handleAddApiPath}>Add Api Path +</button>
-        <div>
-          {apiPaths.map((item, apiIndex) => (
-            <div key={apiIndex}>
-              <label>
-                API Path:
-                <input
-                  type="text"
-                  value={item.path}
-                  onChange={(e) => {
-                    const updatedApiPaths = [...apiPaths];
-                    updatedApiPaths[apiIndex].path = e.target.value;
-                    setApiPaths(updatedApiPaths);
-                  }}
+
+  }
+
+  return (
+    <Paper elevation={2} sx={{ mb: 2, overflow: "hidden", borderRadius: 2 }}>
+      <Accordion
+        expanded={expanded}
+        onChange={() => setExpanded(!expanded)}
+        disableGutters
+      >
+        <AccordionSummary sx={{ backgroundColor: theme.palette.grey[100] }}>
+          <Grid container alignItems="center" spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="subtitle1" fontWeight="medium">
+                {path}
+              </Typography>
+            </Grid>
+            {["SIT", "DEVQA", "AAT"].map((env) => (
+              <Grid item xs={4} sm={2} key={env}>
+                <Chip
+                  label={`${env}: ${environmentStatuses[env] || "Not Tested"}`}
+                  color={getStatusColor(environmentStatuses[env])}
+                  size="small"
+                  sx={{ fontWeight: "bold" }}
                 />
-              </label>
-              <br />
+                {typeof environmentStatuses[env] === "number" &&
+                  environmentStatuses[env] >= 200 &&
+                  environmentStatuses[env] < 300 && (
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      sx={{ mt: 0.5 }}
+                    >
+                      {responseTimes[env]?.[path] || "N/A"} ms
+                    </Typography>
+                  )}
+              </Grid>
+            ))}
+          </Grid>
+        </AccordionSummary>
+        {expanded && (
+          <AccordionDetails sx={{ p: 3 }}>
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="flex-start"
+              width="100%"
+            >
+              <Typography variant="h6" gutterBottom>
+                Params:
+              </Typography>
+              {selectedEnvironments.length > 0 && (
+                <Box width="100%">
+                  <Tabs
+                    value={selectedEnvironment}
+                    onChange={(_, newEnvironment) => {
+                      setSelectedEnvironment(newEnvironment);
+                      updatepara(newEnvironment);
+                    }
+                    }
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{ mb: 2 }}
+                  >
+                    {selectedEnvironments.map((env) => (
+                      <Tab key={env} label={env} value={env} />
+                    ))}
+                  </Tabs>
+                  <Box mt={2} width="100%">
+                    <ReactJson
+                      src={ currentparams  || { message: "No response yet" }}
+                      displayDataTypes={false}
+                      name={null}
+                      collapsed={1}
+                      theme="monokai"
+                      style={{ textAlign: "left", borderRadius: "4px" }}
+                    />
+                  </Box>
+                </Box>
+              )}
 
-              <label>
-                Select an Option:
-                <select
-                  value={item.method}
-                  onChange={(e) => {
-                    const updatedApiPaths = [...apiPaths];
-                    updatedApiPaths[apiIndex].method = e.target.value;
-                    setApiPaths(updatedApiPaths);
-                  }}
-                >
-                  <option value="get">get</option>
-                  <option value="post">post</option>
-                  <option value="put">put</option>
-                  <option value="delete">delete</option>
-                </select>
-              </label>
-              <br />
 
-              <h3>Parameters:</h3>
-              {item.params.map((param, paramIndex) => (
-                <div key={paramIndex}>
-                  <input
-                    type="text"
-                    value={param.key}
-                    onChange={(e) => handleKeyValuePairChange(apiIndex, paramIndex, 'key', e.target.value)}
-                    placeholder="Key"
-                  />
-                  <input
-                    type="text"
-                    value={param.value}
-                    onChange={(e) => handleKeyValuePairChange(apiIndex, paramIndex, 'value', e.target.value)}
-                    placeholder="Value"
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={param.environments.includes('SIT')}
-                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'SIT')}
+              <Typography variant="h6" gutterBottom>
+                Response:
+              </Typography>
+              {selectedEnvironments.length > 0 && (
+                <Box width="100%">
+                  <Tabs
+                    value={selectedEnvironment}
+                    onChange={(_, newEnvironment) =>
+                      setSelectedEnvironment(newEnvironment)
+                    }
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{ mb: 2 }}
+                  >
+                    {selectedEnvironments.map((env) => (
+                      <Tab key={env} label={env} value={env} />
+                    ))}
+                  </Tabs>
+                  <Box mt={2} width="100%">
+                    <ReactJson
+                      src={response || { message: "No response yet" }}
+                      displayDataTypes={false}
+                      name={null}
+                      collapsed={1}
+                      theme="monokai"
+                      style={{ textAlign: "left", borderRadius: "4px" }}
+                    />
+                  </Box>
+                </Box>
+              )}
+            </Box>
+            <Box mt={4}>
+              <Typography variant="h6" gutterBottom>
+                Response Comparison:
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Compare Environments</InputLabel>
+                    <Select
+                      multiple
+                      value={comparisonEnvironments}
+                      onChange={(event) => {
+                        setComparisonEnvironments(event.target.value);
+                        if (
+                          event.target.value.length > 0 &&
+                          !basisEnvironment
+                        ) {
+                          setBasisEnvironment(event.target.value[0]);
+                        }
+                      }}
+                      label="Compare Environments"
+                    >
+                      {["SIT", "DEVQA", "AAT"].map((env) => (
+                        <MenuItem key={env} value={env}>
+                          {env}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Basis Environment</InputLabel>
+                    <Select
+                      value={basisEnvironment}
+                      onChange={(event) =>
+                        setBasisEnvironment(event.target.value)
+                      }
+                      label="Basis Environment"
+                      disabled={comparisonEnvironments.length < 2}
+                    >
+                      {comparisonEnvironments.map((env) => (
+                        <MenuItem key={env} value={env}>
+                          {env}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+              {comparisonEnvironments.length >= 2 && basisEnvironment && (
+                <>
+                  <ComparisonGrid
+                    title="Keys present in comparison environments but not in basis"
+                    icon={
+                      <AddIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 1 }}
                       />
                     }
-                    label="SIT"
+                    data={comparisonData}
+                    columns={columns}
+                    onExport={() => exportToJson(comparisonData, "unique_keys")}
                   />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={param.environments.includes('DEVQA')}
-                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'DEVQA')}
+                  <ComparisonGrid
+                    title="Keys missing in comparison environments"
+                    icon={
+                      <RemoveIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 1 }}
                       />
                     }
-                    label="DEVQA"
+                    data={missingKeysData}
+                    columns={columns}
+                    onExport={() =>
+                      exportToJson(missingKeysData, "missing_keys")
+                    }
                   />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={param.environments.includes('AAT')}
-                        onChange={() => handleEnvironmentToggle(apiIndex, paramIndex, 'AAT')}
+                  <ComparisonGrid
+                    title="Keys with different values across environments"
+                    icon={
+                      <CompareIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 1 }}
                       />
                     }
-                    label="AAT"
+                    data={differentValuesData}
+                    columns={differentValuesColumns}
+                    onExport={() =>
+                      exportToJson(differentValuesData, "different_values")
+                    }
                   />
-                </div>
-              ))}
-              <button onClick={() => handleAddKeyValuePair(apiIndex)}>Add Parameter +</button>
-
-              <br />
-            </div>
-          ))}
-        </div>
-      </div>
-    </Container>
+                </>
+              )}
+            </Box>
+          </AccordionDetails>
+        )}
+      </Accordion>
+    </Paper>
   );
 };
 
-export default EditApiPage;
+export default APIPath;
