@@ -14,10 +14,11 @@ import {
   IconButton,
   Collapse,
   TextField,
-  Select,
-  MenuItem,
-  InputLabel,
+  FormControlLabel,
   FormControl,
+  FormLabel,
+  Radio,
+  RadioGroup,
 } from "@mui/material";
 import APIPath from "components/APIPath";
 import SuccessFailChart from "components/SuccessFailChart";
@@ -295,18 +296,20 @@ export const FilterSection = ({
   handleSearchChange,
 }) => (
   <Box sx={{ display: "flex", mb: 2, gap: 2, justifyContent: "center" }}>
-    <FormControl variant="outlined" size="small" sx={{ width: "150px" }}>
-      <InputLabel>Method</InputLabel>
-      <Select
-        value={methodFilter}
-        onChange={handleMethodFilterChange}
-        label="Method"
-      >
-        <MenuItem value="ALL">All</MenuItem>
-        <MenuItem value="GET">GET</MenuItem>
-        <MenuItem value="POST">POST</MenuItem>
-      </Select>
-    </FormControl>
+    <FormControl component="fieldset" sx={{ mr: 4 }}>
+        <FormLabel component="legend">Method</FormLabel>
+        <RadioGroup
+          row
+          aria-label="method"
+          name="method-filter"
+          value={methodFilter}
+          onChange={handleMethodFilterChange}
+        >
+          <FormControlLabel value="ALL" control={<Radio />} label="All" />
+          <FormControlLabel value="GET" control={<Radio />} label="GET" />
+          <FormControlLabel value="POST" control={<Radio />} label="POST" />
+        </RadioGroup>
+      </FormControl>
     <TextField
       label="Search APIs"
       variant="outlined"
