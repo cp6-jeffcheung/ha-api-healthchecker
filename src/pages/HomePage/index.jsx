@@ -54,18 +54,32 @@ const HomePage = () => {
   });
   const [apiJson, setApiJson] = useState(JSON.stringify(apiConfig, null, 2));
 
+  useEffect(() => {
+    try {
+      const parsedConfig = JSON.parse(apiJson);
+      setApiConfig(parsedConfig);
+    } catch (error) {
+      console.error("Invalid JSON format:", error);
+      setSnackbar({
+        open: true,
+        message: "Invalid JSON format",
+        severity: "error",
+      });
+    }
+  }, [apiJson]);
+
   const theme = useTheme();
   const dispatch = useDispatch();
   const { selectedEnvironments, params, status, statusCodes, responseTimes } =
     useSelector((state) => state.api);
   const [filter, setFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
     try {
@@ -150,9 +164,23 @@ const HomePage = () => {
   };
 
   const handleStartClick = () => {
+    setHasStarted(true);
     forEach(apiConfig.apis, (api) => {
       selectedEnvironments.forEach((env) => {
-        dispatch(callAPI(api.path, params[api.path], env));
+        try {
+          const apiParams = api.params[env] || {};
+          dispatch(callAPI(api.path, apiParams, env));
+        } catch (error) {
+          console.error(
+            `Error calling API for path: ${api.path}, env: ${env}`,
+            error
+          );
+          setSnackbar({
+            open: true,
+            message: `Error calling API: ${api.path}`,
+            severity: "error",
+          });
+        }
       });
     });
   };
@@ -184,36 +212,37 @@ const HomePage = () => {
     switch (currentPage) {
       case "home":
         return (
-          <Container maxWidth="lg">
-            <Box sx={{ my: 4 }}>
-              <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                <EnvironmentSelector
-                  selectedEnvironments={selectedEnvironments}
-                  handleEnvironmentChange={handleEnvironmentChange}
-                  handleStartClick={handleStartClick}
-                  theme={theme}
-                />
-              </Box>
-              <ChartSection
-                chartData={chartData}
-                statusCodeCounts={statusCodeCounts}
-                handleChartDataPointSelection={handleChartDataPointSelection}
-              />
-              <APIList
-                filter={filter}
-                setFilter={setFilter}
-                filteredApis={filteredApis}
-                searchQuery={searchQuery}
-                handleSearchChange={handleSearchChange}
+          <>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+              <EnvironmentSelector
+                selectedEnvironments={selectedEnvironments}
+                handleEnvironmentChange={handleEnvironmentChange}
+                handleStartClick={handleStartClick}
+                theme={theme}
               />
             </Box>
-          </Container>
+            <ChartSection
+              chartData={chartData}
+              statusCodeCounts={statusCodeCounts}
+              handleChartDataPointSelection={handleChartDataPointSelection}
+              hasStarted={hasStarted}
+            />
+            <APIList
+              filter={filter}
+              setFilter={setFilter}
+              filteredApis={filteredApis}
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              apiConfig={apiConfig}
+            />
+          </>
         );
       case "edit":
         return (
           <EditApiPage
             apiJson={apiJson}
             setApiJson={setApiJson}
+            apiConfig={apiConfig}
             setApiConfig={setApiConfig}
             setSnackbar={setSnackbar}
           />
@@ -249,7 +278,9 @@ const HomePage = () => {
       />
       <Main open={open}>
         <DrawerHeader />
-        {renderPage()}
+        <Container maxWidth="lg">
+          <Box sx={{ my: 4 }}>{renderPage()}</Box>
+        </Container>
       </Main>
       <Snackbar
         open={snackbar.open}

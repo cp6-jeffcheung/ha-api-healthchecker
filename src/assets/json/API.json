@@ -3,111 +3,287 @@
     {
       "path": "app-config/view-mode",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "wrkStnType": "0"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0"
+        }
       }
     },
     {
       "path": "app-config/maintenance-mode",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "wrkStnType": "0",
-        "wardCode": "5K",
-        "wardLocation": "5K"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "wardCode": "5K",
+          "wardLocation": "5K"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "wardCode": "5K",
+          "wardLocation": "5K"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "wardCode": "5K",
+          "wardLocation": "5K"
+        }
       }
     },
     {
       "path": "app-config/default-ward",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        }
       }
     },
     {
       "path": "app-config/psp-wardList",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "wrkStnType": "0",
-        "tvDisplay": "true"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "tvDisplay": "true"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "tvDisplay": "true"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "wrkStnType": "0",
+          "tvDisplay": "true"
+        }
       }
     },
     {
       "path": "app-config/smartccParm",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "wardCode": "5K"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "wardCode": "5K"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "wardCode": "5K"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "wardCode": "5K"
+        }
       }
     },
     {
       "path": "app-config/get-specialty-list",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "userSpec": "MED"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "userSpec": "MED"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "userSpec": "MED"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "userSpec": "MED"
+        }
       }
     },
     {
       "path": "app-config/get-sub-specialty-list",
       "params": {
-        "hospCode": "VH",
-        "specialty": "MED",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT"
+        "SIT": {
+          "hospCode": "VH",
+          "specialty": "MED",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "specialty": "MED",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "specialty": "MED",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT"
+        }
       }
     },
     {
       "path": "display/view-mode",
       "params": {
-        "hospCode": "VH",
-        "wardLocation": "5K",
-        "wardCode": "5K",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "specialty": "MED",
-        "subSpecialty": "2AFU",
-        "startDate": "20240627"
+        "SIT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        }
       }
     },
     {
       "path": "display/view-mode/patient-detail",
       "params": {
-        "hospCode": "VH",
-        "wardLocation": "5K",
-        "wardCode": "5K",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "caseNo": "AE031278200"
+        "SIT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        }
       }
     },
     {
       "path": "display/get-patient-ward",
       "params": {
-        "hospCode": "VH",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "caseNo": "AE031278200"
+        "SIT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "caseNo": "AE031278200"
+        }
       }
     },
     {
       "path": "display/maintenance-mode",
       "params": {
-        "hospCode": "VH",
-        "wardLocation": "5K",
-        "wardCode": "5K",
-        "workstationId": "VH_HAHO",
-        "userId": "@CMSIT",
-        "specialty": "MED",
-        "subSpecialty": "2AFU",
-        "startDate": "20240627"
+        "SIT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        },
+        "DEVQA": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        },
+        "AAT": {
+          "hospCode": "VH",
+          "wardLocation": "5K",
+          "wardCode": "5K",
+          "workstationId": "VH_HAHO",
+          "userId": "@CMSIT",
+          "specialty": "MED",
+          "subSpecialty": "2AFU",
+          "startDate": "20240627"
+        }
       }
     }
   ]

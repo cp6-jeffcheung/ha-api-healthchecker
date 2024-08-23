@@ -1,52 +1,47 @@
-import React from "react";
-import {Box,Typography,Grid,ToggleButtonGroup,ToggleButton,Button,Paper,Chip,useTheme,alpha,TextField} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import {
+  Box,
+  Typography,
+  Grid,
+  ToggleButtonGroup,
+  ToggleButton,
+  Button,
+  Paper,
+  Chip,
+  useTheme,
+  alpha,
+  TextField,
+  IconButton,
+  Collapse,
+} from "@mui/material";
 import APIPath from "components/APIPath";
 import SuccessFailChart from "components/SuccessFailChart";
 import StatusCodeChart from "components/StatusCodeChart";
 import ResponseTimeChart from "components/ResponseTimeChart";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import { resetApiData } from "store/slices/apiSlices";
 
 export const ChartSection = ({
   chartData,
   statusCodeCounts,
   handleChartDataPointSelection,
-}) => (
-  <Grid container spacing={4}>
-    <Grid item xs={12} md={4}>
-      <ChartPaper title="Success vs Fail">
-        <SuccessFailChart
-          series={chartData.successFail}
-          onDataPointSelection={handleChartDataPointSelection("successFail")}
-          width="100%"
-          height={300}
-        />
-      </ChartPaper>
-    </Grid>
-    <Grid item xs={12} md={4}>
-      <ChartPaper title="Status Codes">
-        <StatusCodeChart
-          series={chartData.statusCode}
-          statusCodeCounts={statusCodeCounts}
-          onDataPointSelection={handleChartDataPointSelection("statusCode")}
-          width="100%"
-          height={300}
-        />
-      </ChartPaper>
-    </Grid>
-    <Grid item xs={12} md={4}>
-      <ChartPaper title="Response Times">
-        <ResponseTimeChart
-          series={chartData.responseTime}
-          onDataPointSelection={handleChartDataPointSelection("responseTime")}
-          width="100%"
-          height={300}
-        />
-      </ChartPaper>
-    </Grid>
-  </Grid>
-);
-
-export const ChartPaper = ({ title, children }) => {
+  hasStarted,
+}) => {
+  const [expanded, setExpanded] = useState(false);
   const theme = useTheme();
+
+  useEffect(() => {
+    if (hasStarted) {
+      setExpanded(true);
+    }
+  }, [hasStarted]);
+
+  const handleExpandClick = () => {
+    setExpanded(!expanded);
+  };
+
   return (
     <Paper
       elevation={3}
@@ -62,21 +57,83 @@ export const ChartPaper = ({ title, children }) => {
         "&:hover": {
           transform: "translateY(-5px)",
         },
+        mb: 4,
       }}
     >
-      <Typography
-        variant="h6"
-        align="center"
-        gutterBottom
-        color="primary"
-        fontWeight="bold"
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
       >
-        {title}
-      </Typography>
-      {children}
+        <Typography variant="h5" color="primary" fontWeight="bold">
+          API Analytics
+        </Typography>
+        {hasStarted && (
+          <IconButton onClick={handleExpandClick}>
+            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        )}
+      </Box>
+      <Collapse in={expanded}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <ChartBox title="Success vs Fail">
+              <SuccessFailChart
+                series={chartData.successFail}
+                onDataPointSelection={handleChartDataPointSelection(
+                  "successFail"
+                )}
+                width="100%"
+                height={300}
+              />
+            </ChartBox>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <ChartBox title="Status Codes">
+              <StatusCodeChart
+                series={chartData.statusCode}
+                statusCodeCounts={statusCodeCounts}
+                onDataPointSelection={handleChartDataPointSelection(
+                  "statusCode"
+                )}
+                width="100%"
+                height={300}
+              />
+            </ChartBox>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <ChartBox title="Response Times">
+              <ResponseTimeChart
+                series={chartData.responseTime}
+                onDataPointSelection={handleChartDataPointSelection(
+                  "responseTime"
+                )}
+                width="100%"
+                height={300}
+              />
+            </ChartBox>
+          </Grid>
+        </Grid>
+      </Collapse>
     </Paper>
   );
 };
+
+const ChartBox = ({ title, children }) => (
+  <Box>
+    <Typography
+      variant="h6"
+      align="center"
+      gutterBottom
+      color="primary"
+      fontWeight="bold"
+    >
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
 
 export const APIList = ({
   filter,
@@ -119,7 +176,9 @@ export const APIList = ({
       }}
     >
       {filteredApis.length > 0 ? (
-        filteredApis.map((api, idx) => <APIPath key={idx} path={api.path} />)
+        filteredApis.map((api, idx) => (
+          <APIPath key={idx} path={api.path} params={api.params} />
+        ))
       ) : (
         <Typography variant="body1" align="center">
           No matching API paths found.
@@ -134,70 +193,106 @@ export const EnvironmentSelector = ({
   handleEnvironmentChange,
   handleStartClick,
   theme,
-}) => (
-  <Paper
-    elevation={3}
-    sx={{
-      p: 4,
-      mb: 4,
-      borderRadius: 3,
-      background: `linear-gradient(45deg, ${alpha(
-        theme.palette.primary.light,
-        0.1
-      )}, ${alpha(theme.palette.secondary.light, 0.1)})`,
-    }}
-  >
-    <Grid container spacing={3} alignItems="center">
-      <Grid item xs={12} md={6}>
-        <Typography variant="h6" gutterBottom color="textSecondary">
-          Select Environments:
-        </Typography>
-        <ToggleButtonGroup
-          color="primary"
-          value={selectedEnvironments}
-          onChange={handleEnvironmentChange}
-          aria-label="environment"
-          multiple
-          fullWidth
-        >
-          {["SIT", "DEVQA", "AAT"].map((env) => (
-            <ToggleButton
-              key={env}
-              value={env}
+}) => {
+  const dispatch = useDispatch();
+
+  const handleResetClick = () => {
+    handleEnvironmentChange(null, []);
+    dispatch(resetApiData());
+  };
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 4,
+        mb: 4,
+        borderRadius: 3,
+        background: `linear-gradient(45deg, ${alpha(
+          theme.palette.primary.light,
+          0.1
+        )}, ${alpha(theme.palette.secondary.light, 0.1)})`,
+      }}
+    >
+      <Grid container spacing={3} alignItems="center">
+        <Grid item xs={12} md={6}>
+          <Typography variant="h6" gutterBottom color="textSecondary">
+            Select Environments:
+          </Typography>
+          <ToggleButtonGroup
+            color="primary"
+            value={selectedEnvironments}
+            onChange={handleEnvironmentChange}
+            aria-label="environment"
+            multiple
+            fullWidth
+          >
+            {["SIT", "DEVQA", "AAT"].map((env) => (
+              <ToggleButton
+                key={env}
+                value={env}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: "bold",
+                  "&.Mui-selected": {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                  },
+                }}
+              >
+                {env}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Box display="flex" gap={2}>
+            <Button
+              variant="contained"
+              onClick={handleStartClick}
+              disabled={selectedEnvironments.length === 0}
               sx={{
-                borderRadius: 2,
+                height: "40px",
+                borderRadius: 3,
                 fontWeight: "bold",
-                "&.Mui-selected": {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                fontSize: "0.9rem",
+                textTransform: "uppercase",
+                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                "&:hover": {
+                  background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
                 },
+                boxShadow: `0 4px 6px ${alpha(
+                  theme.palette.primary.main,
+                  0.25
+                )}`,
+                flex: 1,
               }}
             >
-              {env}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+              Start
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handleResetClick}
+              sx={{
+                height: "40px",
+                borderRadius: 3,
+                fontWeight: "bold",
+                fontSize: "0.9rem",
+                textTransform: "uppercase",
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
+                "&:hover": {
+                  borderColor: theme.palette.primary.dark,
+                  color: theme.palette.primary.dark,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                },
+                flex: 1,
+              }}
+            >
+              Reset
+            </Button>
+          </Box>
+        </Grid>
       </Grid>
-      <Grid item xs={12} md={6}>
-        <Button
-          variant="contained"
-          onClick={handleStartClick}
-          disabled={selectedEnvironments.length === 0}
-          sx={{
-            height: "40px",
-            borderRadius: 3,
-            fontWeight: "bold",
-            fontSize: "0.9rem",
-            textTransform: "uppercase",
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-            "&:hover": {
-              background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-            },
-            boxShadow: `0 4px 6px ${alpha(theme.palette.primary.main, 0.25)}`,
-          }}
-        >
-          Start API Calls
-        </Button>
-      </Grid>
-    </Grid>
-  </Paper>
-);
+    </Paper>
+  );
+};

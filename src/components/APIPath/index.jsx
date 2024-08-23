@@ -1,6 +1,23 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {Accordion,AccordionSummary,AccordionDetails,Typography,Grid,Chip,Tabs,Tab,Box,Paper,FormControl,InputLabel,Select,MenuItem,useTheme,Tooltip} from "@mui/material";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  Grid,
+  Chip,
+  Tabs,
+  Tab,
+  Box,
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  useTheme,
+  Tooltip,
+} from "@mui/material";
 import ReactJson from "react-json-view";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -9,36 +26,44 @@ import { updateApiParams } from "store/slices/apiSlices";
 import ComparisonGrid from "./ComparisonGrid";
 import { getStatusColor, isValidResponse, truncateValue } from "utils/apiUtils";
 
-const APIPath = ({ path }) => {
+const APIPath = ({ path, params }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const [expanded, setExpanded] = useState(false);
-  const {
-    responses,
-    statusCodes,
-    responseTimes,
-    params,
-    selectedEnvironments,
-  } = useSelector((state) => state.api);
+  const { responses, statusCodes, responseTimes, selectedEnvironments } =
+    useSelector((state) => state.api);
   const [selectedEnvironment, setSelectedEnvironment] = useState(
     selectedEnvironments[0] || ""
   );
   const [comparisonEnvironments, setComparisonEnvironments] = useState([]);
   const [basisEnvironment, setBasisEnvironment] = useState("");
 
-  const response = responses[selectedEnvironment]?.[path];
+  const formatResponse = (response) => {
+    if (typeof response === "string") {
+      try {
+        return JSON.parse(response);
+      } catch (e) {
+        return { message: response };
+      }
+    }
+    return response || { message: "No response yet" };
+  };
+
+  const response = formatResponse(responses[selectedEnvironment]?.[path]);
   const environmentStatuses = {
-    SIT: statusCodes.SIT[path],
-    DEVQA: statusCodes.DEVQA[path],
-    AAT: statusCodes.AAT[path],
+    SIT: statusCodes.SIT[path] || "Not Tested",
+    DEVQA: statusCodes.DEVQA[path] || "Not Tested",
+    AAT: statusCodes.AAT[path] || "Not Tested",
   };
 
   const handleParamChange = useCallback(
-    (edit) => {
+    (environment) => (edit) => {
+      const currentParams = params[environment] || {};
       dispatch(
         updateApiParams({
           path,
-          params: { ...params[path], [edit.name]: edit.new_value },
+          params: { ...currentParams, [edit.name]: edit.new_value },
+          environment,
         })
       );
     },
@@ -226,17 +251,37 @@ const APIPath = ({ path }) => {
               <Typography variant="h6" gutterBottom>
                 Params:
               </Typography>
+              <Tabs
+                value={selectedEnvironment}
+                onChange={(_, newEnvironment) =>
+                  setSelectedEnvironment(newEnvironment)
+                }
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{ mb: 2 }}
+              >
+                {selectedEnvironments.map((env) => (
+                  <Tab key={env} label={env} value={env} />
+                ))}
+              </Tabs>
               <Box width="100%" mb={3}>
                 <ReactJson
-                  src={params[path] || {}}
-                  onEdit={handleParamChange}
+                  src={params[selectedEnvironment] || {}}
+                  onEdit={handleParamChange(selectedEnvironment)}
                   onDelete={(remove) => {
-                    const updatedParams = { ...params[path] };
+                    const updatedParams =
+                      { ...params[path]?.[selectedEnvironment] } || {};
                     delete updatedParams[remove.name];
-                    dispatch(updateApiParams({ path, params: updatedParams }));
+                    dispatch(
+                      updateApiParams({
+                        path,
+                        params: updatedParams,
+                        environment: selectedEnvironment,
+                      })
+                    );
                   }}
                   onAdd={(add) =>
-                    handleParamChange({
+                    handleParamChange(selectedEnvironment)({
                       name: add.name,
                       new_value: add.new_value,
                     })
@@ -270,14 +315,30 @@ const APIPath = ({ path }) => {
                     ))}
                   </Tabs>
                   <Box mt={2} width="100%">
-                    <ReactJson
-                      src={response || { message: "No response yet" }}
-                      displayDataTypes={false}
-                      name={null}
-                      collapsed={1}
-                      theme="monokai"
-                      style={{ textAlign: "left", borderRadius: "4px" }}
-                    />
+                    {typeof response === "object" ? (
+                      <ReactJson
+                        src={response}
+                        displayDataTypes={false}
+                        name={null}
+                        collapsed={1}
+                        theme="monokai"
+                        style={{ textAlign: "left", borderRadius: "4px" }}
+                      />
+                    ) : (
+                      <Typography
+                        variant="body1"
+                        component="pre"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          bgcolor: "grey.100",
+                          p: 2,
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {response}
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               )}
