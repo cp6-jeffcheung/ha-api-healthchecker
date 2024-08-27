@@ -130,10 +130,7 @@ const APIPath = ({ path, params }) => {
       env !== basisEnvironment
         ? getUniqueKeys(basisEnvironment, env).map((key) => ({
             id: `${env}-${key}`,
-            [env]:
-              typeof responses[env]?.[path] === "object"
-                ? responses[env][path][key]
-                : responses[env]?.[path] || "",
+            [env]: key,
           }))
         : []
     );

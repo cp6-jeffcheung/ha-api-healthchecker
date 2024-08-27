@@ -1,6 +1,22 @@
 {
   "apis": [
     {
+      "path": "test",
+      "method": "GET",
+      "params": {
+        "SIT": {
+          "a": "1"
+        },
+        "DEVQA": {
+          "b": "2"
+        },
+        "AAT": {
+          "a": "q",
+          "b": "d"
+        }
+      }
+    },
+    {
       "path": "app-config/view-mode",
       "method": "GET",
       "params": {

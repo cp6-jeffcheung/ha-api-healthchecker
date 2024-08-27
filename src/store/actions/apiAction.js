@@ -12,6 +12,19 @@ export const callAPI = (apiPath, params, environment, method = 'GET', body = nul
   const startTime = Date.now();
 
   try {
+    // Special handling for "test" API path
+    if (apiPath === "test") {
+        const response = params;
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+
+        dispatch(setApiResponse({ path: apiPath, response, environment }));
+        dispatch(setApiStatusCode({ path: apiPath, statusCode: 200, environment }));
+        dispatch(setApiResponseTime({ path: apiPath, responseTime, environment }));
+        dispatch(setApiStatus({ path: apiPath, status: "Success", environment }));
+        return;
+    }
+
     let apiFullUrl = `${host.hostPreEnv}${environment.toLowerCase()}${
       host.hostPostEnv
     }${apiPath}`;
@@ -45,7 +58,6 @@ export const callAPI = (apiPath, params, environment, method = 'GET', body = nul
     try {
       parsedResponse = JSON.parse(resp.data);
     } catch (outerParseError) {
-      // If parsing fails, check if the response contains an error message with embedded JSON
       const errorMatch = resp.data.match(/(\d+)\s+([^:]+):\s+"(.*)"/);
       if (errorMatch) {
         const [, statusCode, statusText, jsonString] = errorMatch;
